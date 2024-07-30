@@ -8,7 +8,7 @@ pub struct Version {
     patch: u16,
 }
 
-pub enum VersionChange {
+pub enum VersionLevel {
     Major,
     Minor,
     Patch,
@@ -35,19 +35,25 @@ impl Version {
             patch,
         }
     }
+    
+    pub fn create_child_version(&self, change: VersionLevel) -> Version {
+        let mut version = self.clone();
+        version.increment(change);
+        version
+    }
 
-    pub fn increment(&mut self, change: VersionChange) {
+    pub fn increment(&mut self, change: VersionLevel) {
         match change {
-            VersionChange::Major => {
+            VersionLevel::Major => {
                 self.major += 1;
                 self.minor = 0;
                 self.patch = 0;
             }
-            VersionChange::Minor => {
+            VersionLevel::Minor => {
                 self.minor += 1;
                 self.patch = 0;
             }
-            VersionChange::Patch => self.patch += 1,
+            VersionLevel::Patch => self.patch += 1,
         }
     }
 
@@ -88,6 +94,25 @@ mod tests {
         assert_eq!(version.minor, 2);
         assert_eq!(version.patch, 3);
     }
+    
+    #[test]
+    fn test_version_create_child_version() {
+        let version = Version::new(1, 2, 3);
+        let new_version = version.create_child_version(VersionLevel::Major);
+        assert_eq!(new_version.major, 2);
+        assert_eq!(new_version.minor, 0);
+        assert_eq!(new_version.patch, 0);
+        
+        let new_version = version.create_child_version(VersionLevel::Minor);
+        assert_eq!(new_version.major, 1);
+        assert_eq!(new_version.minor, 3);
+        assert_eq!(new_version.patch, 0);
+        
+        let new_version = version.create_child_version(VersionLevel::Patch);
+        assert_eq!(new_version.major, 1);
+        assert_eq!(new_version.minor, 2);
+        assert_eq!(new_version.patch, 4);
+    }
 
     #[test]
     fn test_version_to_string() {
@@ -98,17 +123,17 @@ mod tests {
     #[test]
     fn test_version_increment() {
         let mut version = Version::new(1, 2, 3);
-        version.increment(VersionChange::Major);
+        version.increment(VersionLevel::Major);
         assert_eq!(version.major, 2);
         assert_eq!(version.minor, 0);
         assert_eq!(version.patch, 0);
 
-        version.increment(VersionChange::Minor);
+        version.increment(VersionLevel::Minor);
         assert_eq!(version.major, 2);
         assert_eq!(version.minor, 1);
         assert_eq!(version.patch, 0);
 
-        version.increment(VersionChange::Patch);
+        version.increment(VersionLevel::Patch);
         assert_eq!(version.major, 2);
         assert_eq!(version.minor, 1);
         assert_eq!(version.patch, 1);
@@ -150,7 +175,7 @@ mod tests {
     fn test_copy() {
         let version1 = Version::new(1, 2, 3);
         let mut version2 = version1;
-        version2.increment(VersionChange::Major);
+        version2.increment(VersionLevel::Major);
         assert_eq!(version1.major, 1);
         assert_eq!(version2.major, 2);
     }
@@ -159,7 +184,7 @@ mod tests {
     fn test_clone() {
         let version1 = Version::new(1, 2, 3);
         let mut version2 = version1.clone();
-        version2.increment(VersionChange::Major);
+        version2.increment(VersionLevel::Major);
         assert_eq!(version1.major, 1);
         assert_eq!(version2.major, 2);
     }
