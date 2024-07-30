@@ -45,10 +45,14 @@ impl Tag {
             None => return Err(TagError::EditEmptyTag),
         };
         
-        let new_instance = tag_instance.get_instance().create_restored_instance(note);
+        let new_instance = tag_instance.get_instance().create_restoration_instance(note);
         self.instances.add(TagInstance::with_instance(tag_instance.value.clone(), new_instance))?;
         
         Ok(())
+    }
+    
+    pub fn get_id(&self) -> &str {
+        &self.id
     }
 }
 

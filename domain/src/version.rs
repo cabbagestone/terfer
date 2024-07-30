@@ -16,10 +16,14 @@ pub enum VersionLevel {
 
 impl Version {
     pub fn from_string(version: &str) -> Result<Version, VersionError> {
-        let parts: Vec<&str> = version.split('.').collect();
+        let mut parts: Vec<&str> = version.split('.').collect();
 
         if parts.len() != 3 {
-            return Err(VersionError::InvalidVersionString(version.to_string()));
+            parts = version.split('-').collect();
+            
+            if parts.len() != 3 {
+                return Err(VersionError::InvalidVersionString(version.to_string()));
+            }
         }
 
         Ok(Version {
@@ -59,6 +63,10 @@ impl Version {
 
     pub fn to_string(&self) -> String {
         format!("{}.{}.{}", self.major, self.minor, self.patch)
+    }
+    
+    pub fn file_safe_string(&self) -> String {
+        format!("{}-{}-{}", self.major, self.minor, self.patch)
     }
 }
 

@@ -1,6 +1,5 @@
 use std::cmp::PartialEq;
 use std::fmt::Display;
-use std::str::Matches;
 use jiff::Zoned;
 use crate::version::{Version, VersionLevel};
 
@@ -48,7 +47,7 @@ impl Instance {
         }
     }
     
-    pub fn create_restored_instance(&self, note: Option<String>) -> Self {
+    pub fn create_restoration_instance(&self, note: Option<String>) -> Self {
         Self {
             datetime: Zoned::now(),
             change_note: note.unwrap_or(String::from("Instance restored")),
@@ -209,7 +208,7 @@ mod tests {
         assert_eq!(instance_list.latest().unwrap().get_instance().is_type_of(InstanceType::Deletion), true);
         
         let instance5 = TestInstance {
-            instance: instance4.get_instance().create_restored_instance(None),
+            instance: instance4.get_instance().create_restoration_instance(None),
         };
         
         instance_list.add(instance5).unwrap();
