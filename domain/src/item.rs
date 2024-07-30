@@ -8,21 +8,26 @@ struct Item {
     id: String,
     instances: InstanceList<ItemInstance>,
     containing_folder: String,
+    file_extension: String,
     file_type: FileType,
     file_title: Option<String>,
     tags: Vec<Tag>,
 }
 
 impl Item {
-    pub fn new(folder: String, file_type: FileType) -> Self {
-        Self {
+    pub fn new(containing_folder: String, file_extension: String, file_type: FileType) -> Result<Self, ItemError> {
+        if containing_folder.ends_with('/') {
+            return Err(ItemError::FilePath(String::from("Folder path cannot end with a slash")));
+        }
+        Ok(Self {
             id: Uuid::new_v4().to_string(),
             instances: InstanceList::new(Vec::from([ItemInstance::new()])),
-            containing_folder: folder,
+            containing_folder,
+            file_extension,
             file_type,
             file_title: None,
             tags: Vec::new(),
-        }
+        })
     }
     
     pub fn edit_title(&mut self, title: String) {
@@ -80,12 +85,23 @@ impl Item {
             None => Err(ItemError::TagNotFound),
         }
     }
+    
+    pub fn current_file_path(&self) -> Result<String, ItemError> {
+        let instance = match self.instances.latest() {
+            Some(instance) => instance,
+            None => return Err(ItemError::RetrieveEmptyItem),
+        };
+        
+        Ok(format!("{}/{}.{}", self.containing_folder, instance.file_name.to_string().unwrap(), self.file_extension))
+    }
 }
 
 #[derive(Debug)]
 pub enum ItemError {
     TagNotFound,
     EditEmptyItem,
+    RetrieveEmptyItem,
+    FilePath(String),
     Instance(InstanceError),
     Tag(TagError),
 }
@@ -111,6 +127,8 @@ impl std::fmt::Display for ItemError {
             ItemError::Tag(e) => write!(f, "Item tag error: {}", e),
             ItemError::TagNotFound => write!(f, "Tag not found"),
             ItemError::EditEmptyItem => write!(f, "Cannot edit an empty item"),
+            ItemError::RetrieveEmptyItem => write!(f, "Cannot retrieve an empty item"),
+            ItemError::FilePath(e) => write!(f, "Path error: {}", e),
         }
     }
 }
@@ -146,6 +164,7 @@ impl Instanced for ItemInstance {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Copy, Clone)]
 enum FileType {
     Image,
     Video,
@@ -165,10 +184,10 @@ mod tests {
     use super::*;
     
     #[test]
-    fn test_item() {
+    fn test_item() -> Result<(), ItemError> {
         let folder_location = String::from("res/files/12154-15152-125");
         
-        let mut item = Item::new(folder_location, FileType::Image);
+        let mut item = Item::new(folder_location, String::from("jpeg"), FileType::Image)?;
         
         item.edit(String::from("Test Change"), VersionLevel::Minor).unwrap();
         item.delete(None).unwrap();
@@ -185,5 +204,7 @@ mod tests {
         
         item.remove_tag(&tag_id).unwrap();
         assert_eq!(item.tags.len(), 0);
+        
+        Ok(())
     }
 }
