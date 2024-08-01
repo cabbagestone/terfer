@@ -54,11 +54,19 @@ impl Tag {
     pub fn get_id(&self) -> &str {
         &self.id
     }
+    
+    pub fn get_value(&self) -> Result<String, TagError> {
+        match self.instances.latest() {
+            Some(instance) => Ok(instance.value.clone()),
+            None => Err(TagError::RetrieveEmptyTag),
+        }
+    }
 }
 
 #[derive(Debug)]
 pub enum TagError {
     EditEmptyTag,
+    RetrieveEmptyTag,
     Instance(InstanceError),
 }
 
@@ -75,6 +83,7 @@ impl std::fmt::Display for TagError {
         match self {
             TagError::EditEmptyTag => write!(f, "Cannot edit an empty tag"),
             TagError::Instance(e) => write!(f, "Tag Instance Error: {}", e),
+            TagError::RetrieveEmptyTag => write!(f, "Cannot retrieve an empty tag"),
         }
     }
 }
@@ -140,5 +149,7 @@ mod tests {
         
         tag.tag.restore(Some(String::from("Restore Tag"))).unwrap();
         assert_eq!(tag.get_instance().get_version(), &Version::new(4, 0, 0));
+        
+        assert_eq!(tag.tag.get_value().unwrap(), "Test Tag 2");
     }
 }
